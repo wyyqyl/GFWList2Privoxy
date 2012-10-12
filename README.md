@@ -8,7 +8,7 @@ As we all know, gfwlist contains the sites that blocked by the fucking GFW.
 But the rules in gfwlist can't be used in privoxy, so I decided to convert all
 these rules so that it can be used by privoxy.
 
-This project is motivated by [AutoProxy2Privoxy](ttps://github.com/cckpg/autoproxy2privoxy).
+This project is motivated by [AutoProxy2Privoxy](https://github.com/cckpg/autoproxy2privoxy).
 The author uses BASH script to do the job. I am not good at BASH script, and his/her
 script contains some mistakes(mine contains some mistakes also), so I decided to use
 python to do the conversion.
@@ -24,9 +24,11 @@ This script is written in python, so it can be used on most platforms.
 
 First, open GFWList2Privoxy.py, and modify the variable PROXY to your settings.
 I am using SSH, so the rule is like below:
+
 	{+forward-override{forward-socks5 127.0.0.1:7070 .}}
 
 Then, issue the following command:
+
 	python GFWList2Privoxy.py
 
 Wait for a few seconds or minutes before the gfwlist.txt is downloaded from the web.
