@@ -68,6 +68,10 @@ def parse_data(data):
 			# do nothing
 			pass
 		else:
+			
+			if item.startswith('http'):
+				item = item[7:]
+			
 			index = item.find('.*')
 			if index == -1:
 				index = item.find('/')
@@ -76,25 +80,33 @@ def parse_data(data):
 					dot = item.find('.')
 					if asterisk == -1:
 						if dot == -1:
-							item = ':80/*' + item.replace(',', '\.')
-						else:							
-							results.append(':80/.*' + item.replace(',', '\.'))
+							# freenet => :80/freenet
+							item = ':80/*' + item
+						else:
+							# .0rz.tw => :80/.*.\.0rz\.tw
+							# .0rz.tw => .0rz.tw:80
+							results.append(':80/.*' + item.replace('.', '\.'))
 							if not item.startswith('.'):
 								item = '.' + item
 							results.append(item + ':80')
 							item = ''
 					else:
 						if dot == -1:
+							# search*%E9%85%B7%E5%88%91 => :80/search.*%E9%85%B7%E5%88%91
 							item = ':80/' + item
 						else:
 							if dot < asterisk:
-								item = item[0:asterisk] + '*:80*' + item[asterisk+1:]
+								# zh.wikipedia.org*GFW => zh.wikipedia.org.:80/.*GFW
+								item = item[0:asterisk] + '.:80/*' + item[asterisk+1:]
 							else:
 								pass
 				else:
+					# .google.com/moderator => .google.com:80/moderator
 					item = item[0:index] + ':80' + item[index:]
 			else:
-				item = item[0:index] + '*:80*' + item[index+2:]
+				# .google.*great*firewall => .google.:80/?.*great.*firewall
+				# .google.*/search*%E9%94%A6%E6%B6%9B => .google.:80/?.*/search.*%E9%94%A6%E6%B6%9B
+				item = item[0:index+1] + ':80/?*' + item[index+2:]
 			
 			if item:
 				results.append(item.replace('*', '.*'))
@@ -102,7 +114,7 @@ def parse_data(data):
 	return results + exceptions
 	
 def generate_data():
-	data = fetch_data_from_web()
+	data = fetch_data_from_file()
 	if data:
 		results = parse_data(data)
 	
