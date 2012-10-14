@@ -1,4 +1,4 @@
-{+forward-override{forward-socks5 127.0.0.1:7070 .}}
+{+forward-override{forward 127.0.0.1:8087}}
 # Checksum: vEuu5QN3nsa34Wytg8k+tg
 # Checksum: 
 # Expires: 6h
@@ -1555,6 +1555,7 @@ ub0.cc:80
 #--Da Lai La Ma
 .google.com.:80/.*%E8%BE%BE%E8%B5%96%E5%96%87%E5%98%9B
 #--Dai Li/Proxy
+*.google.com*%E4%BB%A3%E7%90%86
 .*.google.com.*%E4%BB%A3%E7%90%86
 .google.:80/?.*facebook
 #--Fan Qiang
@@ -2431,7 +2432,9 @@ newspeak.cc:80/story
 :80/.*newtalk\.tw
 .newtalk.tw:80
 .newtalk.tw
+hk*.nextmedia.com
 hk.*.nextmedia.com
+tw*.nextmedia.com
 tw.*.nextmedia.com
 .nexton-net.jp
 :80/.*\.nexttv\.com\.tw

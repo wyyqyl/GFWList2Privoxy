@@ -2,40 +2,60 @@
 
 import urllib2
 import base64
+import os.path
+import time
 
-PROXY = '127.0.0.1:7070'
+# socks5
+# PROXY = '{+forward-override{forward-socks5 127.0.0.1:7070 .}}'
+# GoAgent
+PROXY = '{+forward-override{forward 127.0.0.1:8087}}'
 
+GFWLIST = 'gfwlist.txt'
+GFWACTION = 'gfwlist.action'
+SecondsInWeek = 7*24*60*60
+ 
 def fetch_data_from_web():
 	
 	url = r'http://autoproxy-gfwlist.googlecode.com/svn/trunk/gfwlist.txt'
-	print 'Fetching data from %s, it might take a few minutes, please wait...' % url
+	print 'Fetching data from googlecode.com, it might take a few minutes, please wait...'
 	
-	base64Data = urllib2.urlopen(url).read()
-	gfwData = base64.b64decode(base64Data)
-	
-	gfwtxt = open('gfwlist.txt', 'w')
-	gfwtxt.write(gfwData)
-	gfwtxt.close()
-	
-	return gfwData.split('\n')
-
-def fetch_data_from_file():
 	try:
-		with open('gfwlist.txt', 'r+') as data:
-			return data.read().split('\n')
-	except IOError as e:
-		print 'Please download gfwlist.txt first'
-		return []
+		base64Data = urllib2.urlopen(url).read()
+		gfwData = base64.b64decode(base64Data)
+		
+		gfwtxt = open(GFWLIST, 'w')
+		gfwtxt.write(gfwData)
+		gfwtxt.close()
+		
+		return gfwData.split('\n')
+	except urllib2.URLError as error:
+		print 'Failed to fetch data from googlecode.com: %s' % error.reason
 
+def fetch_data():
+	try:
+		fileTime = os.path.getmtime(GFWLIST)
+		currentTime = time.time()
+		if currentTime - fileTime > SecondsInWeek:
+			return fetch_data_from_web()
+		else:
+			data = open(GFWLIST, 'r+')
+			return data.read().split('\n')
+	
+	except os.error as error:
+		print '%s is not found in the current folder' % GFWLIST
+		return fetch_data_from_web()
+		
 def parse_data(data):
 	results = []
 	exceptions = []
 	
 	print 'Starting to convert data...'
 	
-	results.append('{{+forward-override{{forward-socks5 {0} .}}}}'.format(PROXY))
+	results.append(PROXY)
 	exceptions.append('{+forward-override{forward .}}')
 	
+	line = 0
+	data[0] = '!' + data
 	for item in data:
 		item = item.replace('%2F', '/')
 		if len(item) == 0:
@@ -64,9 +84,6 @@ def parse_data(data):
 			pass
 		elif item.startswith('/'):
 			results.append(':80' + item)
-		elif item.startswith('['):
-			# do nothing
-			pass
 		else:
 			
 			if item.startswith('http'):
@@ -82,6 +99,7 @@ def parse_data(data):
 						if dot == -1:
 							# freenet => :80/freenet
 							item = ':80/*' + item
+							results.append(item.replace('*', '.*'))
 						else:
 							# .0rz.tw => :80/.*.\.0rz\.tw
 							# .0rz.tw => .0rz.tw:80
@@ -89,37 +107,41 @@ def parse_data(data):
 							if not item.startswith('.'):
 								item = '.' + item
 							results.append(item + ':80')
-							item = ''
 					else:
 						if dot == -1:
 							# search*%E9%85%B7%E5%88%91 => :80/search.*%E9%85%B7%E5%88%91
 							item = ':80/' + item
+							results.append(item.replace('*', '.*'))
 						else:
 							if dot < asterisk:
 								# zh.wikipedia.org*GFW => zh.wikipedia.org.:80/.*GFW
 								item = item[0:asterisk] + '.:80/*' + item[asterisk+1:]
+								results.append(item.replace('*', '.*'))
 							else:
-								pass
+								# hk*.nextmedia.com => hk.*.nextmedia.com
+								results.append(item)
+								results.append(item.replace('*', '.*'))
 				else:
 					# .google.com/moderator => .google.com:80/moderator
 					item = item[0:index] + ':80' + item[index:]
+					results.append(item.replace('*', '.*'))
 			else:
 				# .google.*great*firewall => .google.:80/?.*great.*firewall
 				# .google.*/search*%E9%94%A6%E6%B6%9B => .google.:80/?.*/search.*%E9%94%A6%E6%B6%9B
 				item = item[0:index+1] + ':80/?*' + item[index+2:]
-			
-			if item:
 				results.append(item.replace('*', '.*'))
+		line += 1
 	
 	return results + exceptions
 	
 def generate_data():
-	data = fetch_data_from_file()
+	
+	data = fetch_data()
 	if data:
 		results = parse_data(data)
 	
 		if len(results) > 2:
-			gfwfile = open('gfwlist.action', 'w')	
+			gfwfile = open(GFWACTION, 'w')
 			for item in results:
 				gfwfile.write("%s\n" % item)
 			gfwfile.close()
@@ -127,7 +149,7 @@ def generate_data():
 		else:
 			print 'No data generated.'
 	else:
-		print 'No data can be achieved to generate gfwlist.action'
+		print 'No data can be achieved to generate %s' % GFWACTION
 	
 if __name__ == '__main__':
 	generate_data()
