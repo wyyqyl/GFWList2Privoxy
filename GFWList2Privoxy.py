@@ -55,7 +55,7 @@ def parse_data(data):
 	exceptions.append('{+forward-override{forward .}}')
 	
 	line = 0
-	data[0] = '!' + data
+	data[0] = '!' + data[0]
 	for item in data:
 		item = item.replace('%2F', '/')
 		if len(item) == 0:
